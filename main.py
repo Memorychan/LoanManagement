@@ -383,3 +383,10 @@ def reject_payment(request_id: str, current_user = Depends(get_current_user)):
 def get_transaction_history(loan_id: str, current_user = Depends(get_current_user)):
     response = supabase.table("transactions").select("*").eq("loan_id", loan_id).order("created_at", desc=True).execute()
     return response.data
+
+# --- EASTER EGG API ---
+
+@app.get("/HowAreYouGoofadKeBacche")
+def goofy_endpoint():
+    """Secret API for testing or just for fun."""
+    return "Hey I am doing good"
