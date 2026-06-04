@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crystal Ledger | Kishan & Karan</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        /* --- THEME ENGINES --- */
+        :root {
+            --bg-gradient: linear-gradient(135deg, #050a15 0%, #0a192f 100%);
+            --glass-bg: rgba(16, 25, 45, 0.45);
+            --glass-border: rgba(100, 149, 237, 0.2);
+            --glass-highlight: rgba(100, 149, 237, 0.1);
+            --glass-hover: rgba(100, 149, 237, 0.15);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.5);
+            --danger: #fb7185;
+            --success: #34d399;
+            --warning: #facc15;
+        }
+
+        .light-theme {
+            --bg-gradient: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            --glass-bg: rgba(255, 255, 255, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.8);
+            --glass-highlight: rgba(255, 223, 186, 0.4);
+            --glass-hover: rgba(200, 200, 200, 0.2);
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --accent: #f59e0b;
+            --accent-glow: rgba(245, 158, 11, 0.4);
+        }
+
+        /* --- GLOBAL STYLES --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; transition: background 0.3s, color 0.3s, border-color 0.3s; }
+        body { background: var(--bg-gradient); color: var(--text-primary); min-height: 100vh; overflow-x: hidden; }
+        .hidden { display: none !important; }
+
+        /* Ambient Lights (Fixed to prevent scrolling issues) */
+        .ambient-wrapper { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; overflow: hidden; z-index: -1; }
+        .ambient-light { position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.5; }
+        .light-1 { top: -10%; left: -10%; width: 400px; height: 400px; background: var(--accent); }
+        .light-2 { bottom: -10%; right: -10%; width: 500px; height: 500px; background: var(--accent-glow); }
+
+        /* --- UI COMPONENTS --- */
+        .glass-panel {
+            background: var(--glass-bg); backdrop-filter: blur(24px); border: 1px solid var(--glass-border);
+            border-top: 1px solid rgba(255, 255, 255, 0.3); border-radius: 20px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        button { background: var(--accent); color: #fff; border: none; padding: 0.8rem 1.2rem; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        button:hover { transform: translateY(-1px); box-shadow: 0 4px 15px var(--accent-glow); }
+        .btn-success { background: var(--success); }
+        .btn-danger { background: var(--danger); }
+        .icon-btn { background: var(--glass-bg); padding: 0.5rem 1rem; border-radius: 50px; border: 1px solid var(--glass-border); color: var(--text-primary); font-size: 0.9rem; }
+
+        input { width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--glass-border); color: var(--text-primary); padding: 0.8rem; border-radius: 8px; margin-bottom: 1rem; outline: none; }
+        .light-theme input { background: rgba(255, 255, 255, 0.5); }
+        input[type="file"] { padding: 0.5rem; font-size: 0.85rem; }
+
+        /* --- LAYOUT ARCHITECTURE --- */
+        #authView { max-width: 400px; margin: 10vh auto; padding: 2.5rem; text-align: center; }
+
+        #appLayout { display: flex; height: 100vh; width: 100vw; overflow: hidden; }
+
+        /* Sidebar */
+        .sidebar { width: 280px; padding: 2rem 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; border-right: 1px solid var(--glass-border); background: var(--glass-bg); backdrop-filter: blur(24px); z-index: 100; }
+        .sidebar-brand { display: flex; align-items: center; gap: 10px; font-size: 1.5rem; font-weight: 700; color: var(--accent); margin-bottom: 2rem; padding-left: 1rem; }
+        .nav-item { padding: 1rem; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 12px; font-weight: 600; color: var(--text-secondary); transition: 0.2s; }
+        .nav-item:hover { background: var(--glass-hover); color: var(--text-primary); }
+        .nav-item.active { background: var(--accent-glow); color: var(--accent); border: 1px solid var(--glass-border); }
+        
+        /* Main Content Area */
+        .main-content { flex: 1; overflow-y: auto; padding: 2rem; display: flex; flex-direction: column; }
+        
+        /* Top Header */
+        .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .menu-toggle { display: none; background: transparent; border: 1px solid var(--glass-border); color: var(--text-primary); padding: 0.5rem; border-radius: 8px; }
+        .role-badge { background: var(--glass-bg); border: 1px solid var(--glass-border); padding: 0.5rem 1rem; border-radius: 50px; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+
+        /* Dashboard Grid */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .kpi-card { padding: 1.5rem; display: flex; flex-direction: column; justify-content: center; }
+        .kpi-title { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px; }
+        .kpi-value { font-size: 2rem; color: var(--accent); font-weight: 300; }
+
+        /* Action Cards */
+        .action-card { padding: 2rem; margin-bottom: 2rem; }
+        .action-card h3 { margin-bottom: 1.5rem; display: flex; align-items: center; gap: 8px; }
+
+        /* Lists and Tables */
+        .request-card { background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem; border: 1px solid var(--warning); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;}
+        .request-card.approved { border-color: var(--success); }
+        .request-card.rejected { border-color: var(--danger); }
+        
+        .table-responsive { width: 100%; overflow-x: auto; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1rem;}
+        table { width: 100%; border-collapse: collapse; text-align: left; min-width: 500px; }
+        th, td { padding: 1rem; border-bottom: 1px solid var(--glass-border); font-size: 0.95rem; }
+        th { color: var(--text-secondary); font-weight: 600; }
+        .tx-interest { color: var(--danger); }
+        .tx-payment { color: var(--success); }
+
+        /* --- RESPONSIVE MOBILE FIXES --- */
+        @media (max-width: 768px) {
+            #authView { margin: 5vh 1rem; padding: 2rem 1.5rem; }
+            .sidebar { position: fixed; left: -100%; top: 0; height: 100vh; transition: 0.3s ease-in-out; }
+            .sidebar.open { left: 0; box-shadow: 20px 0 50px rgba(0,0,0,0.5); }
+            .main-content { padding: 1rem; }
+            .menu-toggle { display: block; }
+            .top-header { flex-wrap: wrap; gap: 1rem; }
+            .kpi-value { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="ambient-wrapper">
+        <div class="ambient-light light-1"></div>
+        <div class="ambient-light light-2"></div>
+    </div>
+
+    <div id="authView" class="glass-panel">
+        <div style="display: flex; justify-content: center; margin-bottom: 1rem; color: var(--accent);"><i class="ph ph-lock-key" style="font-size: 3rem;"></i></div>
+        <h1>Ledger Access</h1>
+        <p style="color: var(--text-secondary); margin-bottom: 2rem;">Please log in to continue</p>
+        
+        <input type="email" id="email" placeholder="Email Address">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()" style="width: 100%;">Log In</button>
+        <p id="authMessage" style="color: var(--danger); margin-top: 1rem; font-size: 0.85rem;"></p>
+    </div>
+
+    <div id="appLayout" class="hidden">
+        
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-brand"><i class="ph ph-bank"></i> Crystal</div>
+            
+            <a class="nav-item active" id="nav-dashboard" onclick="switchTab('dashboard')">
+                <i class="ph ph-squares-four"></i> Dashboard
+            </a>
+            <a class="nav-item" id="nav-requests" onclick="switchTab('requests')">
+                <i class="ph ph-receipt"></i> Payment Requests
+            </a>
+            <a class="nav-item" id="nav-history" onclick="switchTab('history')">
+                <i class="ph ph-clock-counter-clockwise"></i> History
+            </a>
+
+            <div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px;">
+                <button class="icon-btn" onclick="toggleTheme()" id="themeBtn" style="width: 100%; justify-content: flex-start;"><i class="ph ph-sun"></i> Light Mode</button>
+                <button class="icon-btn" onclick="logout()" style="width: 100%; justify-content: flex-start; color: var(--danger); border-color: rgba(251, 113, 133, 0.3);"><i class="ph ph-sign-out"></i> Logout</button>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            
+            <header class="top-header">
+                <button class="menu-toggle" onclick="toggleMobileMenu()"><i class="ph ph-list" style="font-size: 1.5rem;"></i></button>
+                <h2 id="pageTitle" style="margin-left: 10px;">Dashboard</h2>
+                <div id="roleBadge" class="role-badge" style="margin-left: auto;">Loading...</div>
+            </header>
+
+            <div id="tab-dashboard" class="tab-content">
+                <div class="kpi-grid">
+                    <div class="glass-panel kpi-card">
+                        <div class="kpi-title"><i class="ph ph-coins"></i> Outstanding Balance</div>
+                        <div class="kpi-value">₹<span id="displayBalance">...</span></div>
+                    </div>
+                    <div class="glass-panel kpi-card">
+                        <div class="kpi-title"><i class="ph ph-calendar-blank"></i> Next Interest Due Date</div>
+                        <div class="kpi-value" id="nextAccrualDate" style="color: var(--text-primary); font-size: 1.5rem;">...</div>
+                    </div>
+                    <div class="glass-panel kpi-card">
+                        <div class="kpi-title"><i class="ph ph-trend-up"></i> Compounding Rate</div>
+                        <div class="kpi-value" style="color: var(--text-primary); font-size: 1.5rem;">3.0% / mo</div>
+                    </div>
+                </div>
+
+                <div id="borrowerControls" class="glass-panel action-card hidden">
+                    <h3><i class="ph ph-upload-simple" style="color: var(--accent);"></i> Submit Payment Proof</h3>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 200px;">
+                            <label style="font-size: 0.85rem; color: var(--text-secondary);">Amount Paid (₹)</label>
+                            <input type="number" id="requestAmount" placeholder="Enter amount..." style="margin-top: 0.5rem;">
+                        </div>
+                        <div style="flex: 1; min-width: 200px;">
+                            <label style="font-size: 0.85rem; color: var(--text-secondary);">Attach Receipt</label>
+                            <input type="file" id="receiptFile" accept="image/png, image/jpeg, application/pdf" style="margin-top: 0.5rem;">
+                        </div>
+                    </div>
+                    <button onclick="submitRequest()" style="margin-top: 1rem;"><i class="ph ph-paper-plane-right"></i> Send to Kishan for Approval</button>
+                </div>
+
+                <div id="lenderControls" class="glass-panel action-card hidden">
+                    <h3><i class="ph ph-shield-check" style="color: var(--success);"></i> Quick Override (Lender Only)</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">Directly deduct a payment without a receipt request.</p>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <input type="number" id="paymentInput" placeholder="Amount in ₹" style="flex: 1; min-width: 200px; margin: 0;">
+                        <button onclick="recordPayment()" style="width: auto; margin: 0;"><i class="ph ph-check-circle"></i> Deduct from Balance</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-requests" class="tab-content hidden">
+                <div id="requestsList">
+                    </div>
+            </div>
+
+            <div id="tab-history" class="tab-content hidden">
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>Date</th><th>Description</th><th>Amount (₹)</th></tr></thead>
+                        <tbody id="ledgerBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let SUPABASE_URL = ""; 
+        let isLightMode = false;
+        let isLender = false;
+        
+        // Init
+        fetch(`${API_BASE}/config`).then(r => r.json()).then(d => SUPABASE_URL = d.supabase_url);
+
+        // --- UI ROUTING & TOGGLES ---
+        function toggleMobileMenu() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            // Remove active class from nav
+            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+            
+            // Show target
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            document.getElementById(`nav-${tabName}`).classList.add('active');
+            
+            // Update Title
+            const titles = { 'dashboard': 'Dashboard', 'requests': 'Payment Requests', 'history': 'Ledger History' };
+            document.getElementById('pageTitle').innerText = titles[tabName];
+
+            // Close mobile menu if open
+            document.getElementById('sidebar').classList.remove('open');
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+            isLightMode = !isLightMode;
+            document.getElementById('themeBtn').innerHTML = isLightMode ? '<i class="ph ph-moon"></i> Dark Mode' : '<i class="ph ph-sun"></i> Light Mode';
+        }
+
+        // --- AUTHENTICATION ---
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = event.target;
+            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Authenticating...';
+
+            const res = await fetch(`${API_BASE}/auth/login`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                localStorage.setItem('access_token', data.access_token);
+                localStorage.setItem('user_id', data.user_id);
+                document.getElementById('authView').classList.add('hidden');
+                document.getElementById('appLayout').classList.remove('hidden');
+                loadDashboard();
+            } else {
+                document.getElementById('authMessage').innerText = (await res.json()).detail;
+                btn.innerHTML = 'Log In';
+            }
+        }
+
+        function logout() { localStorage.clear(); location.reload(); }
+
+        // --- DATA FETCHING ---
+        async function loadDashboard() {
+            const token = localStorage.getItem('access_token');
+            const myUserId = localStorage.getItem('user_id');
+
+            const res = await fetch(`${API_BASE}/loans/me`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.ok) {
+                const loanData = await res.json();
+                localStorage.setItem('current_loan_id', loanData.id);
+                
+                // 1. Update KPIs
+                document.getElementById('displayBalance').innerText = parseFloat(loanData.current_balance).toLocaleString('en-IN', {minimumFractionDigits: 2});
+                
+                // Calculate Next Accrual Date
+                const lastAccrual = new Date(loanData.last_accrual_date);
+                const nextAccrual = new Date(lastAccrual.setMonth(lastAccrual.getMonth() + 1));
+                document.getElementById('nextAccrualDate').innerText = nextAccrual.toLocaleDateString('en-IN', {day: '2-digit', month: 'short', year: 'numeric'});
+
+                // 2. Set Roles
+                const roleBadge = document.getElementById('roleBadge');
+                const borrowerControls = document.getElementById('borrowerControls');
+                const lenderControls = document.getElementById('lenderControls');
+
+                isLender = (myUserId === loanData.lender_id);
+                if (isLender) {
+                    roleBadge.innerHTML = '<i class="ph ph-shield-check" style="color: var(--success);"></i> Lender';
+                    lenderControls.classList.remove('hidden');
+                    borrowerControls.classList.add('hidden');
+                } else {
+                    roleBadge.innerHTML = '<i class="ph ph-user" style="color: var(--accent);"></i> Borrower';
+                    borrowerControls.classList.remove('hidden');
+                    lenderControls.classList.add('hidden');
+                }
+
+                // Load sub-tabs
+                fetchRequests(loanData.id, token);
+                fetchTransactions(loanData.id, token);
+            } else {
+                alert("Session Expired or Loan Missing."); logout();
+            }
+        }
+
+        async function submitRequest() {
+            const amount = document.getElementById('requestAmount').value;
+            const fileInput = document.getElementById('receiptFile');
+            if (!amount || amount <= 0 || fileInput.files.length === 0) return alert("Enter amount and attach a receipt.");
+
+            const file = fileInput.files[0];
+            const token = localStorage.getItem('access_token');
+            const btn = event.target;
+            const originalBtnText = btn.innerHTML;
+            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Uploading...';
+            
+            // Upload to Supabase
+            const ext = file.name.split('.').pop();
+            const fileName = `receipt_${Date.now()}.${ext}`;
+            const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/Attachments/${fileName}`, {
+                method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': file.type }, body: file
+            });
+
+            if(!uploadRes.ok) { btn.innerHTML = originalBtnText; return alert("Upload failed."); }
+
+            const receiptUrl = `${SUPABASE_URL}/storage/v1/object/public/Attachments/${fileName}`;
+
+            // Submit DB Record
+            const reqRes = await fetch(`${API_BASE}/loans/payment-requests`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ loan_id: localStorage.getItem('current_loan_id'), amount: parseFloat(amount), receipt_url: receiptUrl })
+            });
+
+            if (reqRes.ok) {
+                alert("Proof submitted!");
+                document.getElementById('requestAmount').value = ''; fileInput.value = '';
+                loadDashboard();
+                switchTab('requests'); // Switch to requests tab to see it
+            }
+            btn.innerHTML = originalBtnText;
+        }
+
+        async function fetchRequests(loanId, token) {
+            const res = await fetch(`${API_BASE}/loans/${loanId}/payment-requests`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const requests = await res.json();
+            const list = document.getElementById('requestsList');
+            
+            if(requests.length === 0) {
+                list.innerHTML = `<div style="text-align: center; padding: 3rem; color: var(--text-secondary);"><i class="ph ph-tray" style="font-size: 3rem; margin-bottom: 1rem;"></i><br>No payment requests yet.</div>`;
+                return;
+            }
+
+            list.innerHTML = '';
+            requests.forEach(req => {
+                let controls = `<div style="color: var(--warning); display:flex; align-items:center; gap:5px; font-weight:600;"><i class="ph ph-hourglass"></i> Pending</div>`;
+                
+                if (req.status === 'pending' && isLender) {
+                    controls = `
+                        <div style="display:flex; gap: 10px;">
+                            <button class="btn-success" style="padding: 0.5rem 1rem;" onclick="processRequest('${req.id}', 'approve')"><i class="ph ph-check"></i> Approve</button>
+                            <button class="btn-danger" style="padding: 0.5rem 1rem;" onclick="processRequest('${req.id}', 'reject')"><i class="ph ph-x"></i> Reject</button>
+                        </div>
+                    `;
+                } else if (req.status === 'approved') {
+                    controls = `<div style="color: var(--success); display:flex; align-items:center; gap:5px; font-weight:600;"><i class="ph ph-check-circle"></i> Approved</div>`;
+                } else if (req.status === 'rejected') {
+                    controls = `<div style="color: var(--danger); display:flex; align-items:center; gap:5px; font-weight:600;"><i class="ph ph-x-circle"></i> Rejected</div>`;
+                }
+
+                list.innerHTML += `
+                    <div class="request-card ${req.status}">
+                        <div>
+                            <div style="font-size: 1.5rem; font-weight: bold; color: var(--text-primary);">₹${req.amount.toLocaleString('en-IN')}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 10px;">Submitted on: ${new Date(req.created_at).toLocaleDateString()}</div>
+                            <a href="${req.receipt_url}" target="_blank" style="color: var(--accent); font-size: 0.9rem; text-decoration: none; display: flex; align-items: center; gap: 5px;"><i class="ph ph-link"></i> View Receipt Image</a>
+                        </div>
+                        ${controls}
+                    </div>
+                `;
+            });
+        }
+
+        async function processRequest(reqId, action) {
+            const token = localStorage.getItem('access_token');
+            const res = await fetch(`${API_BASE}/loans/payment-requests/${reqId}/${action}`, {
+                method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if(res.ok) { loadDashboard(); } else { alert((await res.json()).detail); }
+        }
+
+        async function recordPayment() {
+            const amount = document.getElementById('paymentInput').value;
+            const loanId = localStorage.getItem('current_loan_id');
+            const token = localStorage.getItem('access_token');
+
+            if (!amount || amount <= 0) return alert("Enter valid amount");
+
+            const res = await fetch(`${API_BASE}/loans/record-payment`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ loan_id: loanId, amount: parseFloat(amount), notes: "Manual Override Payment" })
+            });
+
+            if (res.ok) {
+                document.getElementById('paymentInput').value = '';
+                loadDashboard();
+                switchTab('history'); // Jump to history to see the new ledger entry
+            } else {
+                alert((await res.json()).detail);
+            }
+        }
+
+        async function fetchTransactions(loanId, token) {
+            const res = await fetch(`${API_BASE}/loans/${loanId}/transactions`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const transactions = await res.json();
+            const tbody = document.getElementById('ledgerBody');
+            tbody.innerHTML = '';
+
+            transactions.forEach(tx => {
+                const date = new Date(tx.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                const isInterest = tx.transaction_type === 'interest_added';
+                const isPrincipal = tx.transaction_type === 'principal';
+                
+                let cssClass = 'tx-payment'; // Default green for payments
+                let sign = '-';
+                if (isInterest) { cssClass = 'tx-interest'; sign = '+'; }
+                if (isPrincipal) { cssClass = ''; sign = ''; } // White for initial 10 Lakh
+
+                tbody.innerHTML += `<tr><td>${date}</td><td class="${cssClass}">${tx.description}</td><td class="${cssClass}" style="font-weight: 600;">${sign}${parseFloat(tx.amount).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td></tr>`;
+            });
+        }
+
+        // Auto-login check
+        window.onload = () => {
+            if (localStorage.getItem('access_token')) {
+                document.getElementById('authView').classList.add('hidden');
+                document.getElementById('appLayout').classList.remove('hidden');
+                loadDashboard();
+            }
+        }
+    </script>
+</body>
+</html>
