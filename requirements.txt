@@ -1,6 +1,8 @@
 fastapi
 uvicorn
+python-dotenv
 supabase
 pydantic
-python-dotenv
 python-dateutil
+resend
+apscheduler
